@@ -45,7 +45,7 @@ type product = {
 }
 
 type attProduct = {
-    id?:number;
+    id?:string;
     name:string;
     description:string;
     value:string;
@@ -164,15 +164,29 @@ try {
         data.imagem = fs.readFileSync(req.file.path);
     }
 
-    await prismaConnection.tb_produto.update({where: {id},
-        data
-    });
+    let idNumber: number | null = null;
 
-    res.status(200).json({ message: "Produto atualizado com sucesso"});
+        if(id){
+            idNumber = parseInt(id);
+        }
+
+        console.log
+
+        if(idNumber != null){
+            await prismaConnection.tb_produto.update({where: {id:idNumber},
+                data
+            });
+            res.status(200).json({ message: "Produto atualizado com sucesso"});
+        }
+        else{
+            throw new Error();
+        }
+
+    
 
 } catch (error) {
 
-    res.status(500).json({ error: "A atualização do produto falhou"});
+    res.status(500).json({ error });
 }
 });
 
@@ -188,8 +202,6 @@ app.get('/product/:id', authenticateToken,  async (req: Request, res: Response) 
         if(idString){
             id = parseInt(idString);
         }
-    
-        console.log(id);
 
         if(id != null){
             const product = await prismaConnection.tb_produto.findUnique({where: {id}});
