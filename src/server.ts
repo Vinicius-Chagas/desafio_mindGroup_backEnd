@@ -5,10 +5,25 @@ import jwt from "jsonwebtoken";
 import authenticateToken from "./middleware/authMiddleware";
 import multer from 'multer';
 import fs from 'fs';
+import cors from 'cors';
 
 const app = express();
 app.use(express.json());
 const upload = multer({ dest: 'uploads/'});
+
+const allowedOrigins =['http://localhost:3000'];
+
+app.use(cors({
+    origin: (origin, callback) => {
+        if(!origin) return callback(null,true);
+
+        if(allowedOrigins.indexOf(origin)!== -1){
+            callback(null,true);
+        }else{
+            callback(new Error('Not allowed by CORS'));
+        }
+    }
+}))
 
 type user = {
     name: string;
@@ -25,7 +40,7 @@ type login = {
 type product = {
     name:string;
     description:string;
-    value:number;
+    value:string;
     image?: Buffer;
 }
 
@@ -90,24 +105,24 @@ app.post('/login', async (req: Request, res: Response) => {
     }
 });
 
-app.post('/product', authenticateToken,upload.single('image'), async (req: Request, res: Response) => {
+app.post('/product', authenticateToken, upload.single('image'), async (req: Request, res: Response) => {
     const defaultImage = fs.readFileSync("./src/assets/defaultImage.jpeg");
     
 try {
             
-    const { name, description, value}: product = req.body;
+    const { name, description, value}: product = await req.body;
  
     let imageData: Buffer = Buffer.from(defaultImage);
 
     if(req.file){
-        imageData = req.file.buffer;
+        imageData = fs.readFileSync(req.file.path);
     }
 
     await prismaConnection.tb_produto.create({
         data: {
             nome: name,
             descricao: description,
-            valor: value,
+            valor: parseFloat(value),
             imagem: imageData
         }
     });
@@ -115,6 +130,7 @@ try {
     res.status(201).json({ message: "Product created successfully"});
 
 } catch (error) {
+
     res.status(500).json({ error: "Item creation failed"});
 }
 });
