@@ -27,7 +27,7 @@ model tb_produto {
   nome String
   descricao String
   valor Float
-  imagem Bytes
+  imagem Bytes?
   estoque tb_estoque?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

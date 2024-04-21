@@ -2,9 +2,13 @@ import prismaConnection from "./libs/mysql";
 import express, { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import authenticateToken from "./middleware/authMiddleware";
+import multer from 'multer';
+import fs from 'fs';
 
 const app = express();
 app.use(express.json());
+const upload = multer({ dest: 'uploads/'});
 
 type user = {
     name: string;
@@ -16,6 +20,18 @@ type user = {
 type login = {
     email: string;
     password: string;
+}
+
+type product = {
+    name:string;
+    description:string;
+    value:number;
+    image?: Buffer;
+}
+
+type stock = {
+    id: number;
+    total: number;
 }
 
 app.post("/register", async (req: Request, res: Response) => {
@@ -72,6 +88,6 @@ app.post('/login', async (req: Request, res: Response) => {
     } catch (error) {
         res.status(500).json({ error: "Something went wrong" });
     }
-})
+});
 
 app.listen(8080, () => console.log('Server listening on port 8080'));
