@@ -90,4 +90,81 @@ app.post('/login', async (req: Request, res: Response) => {
     }
 });
 
+app.post('/product', authenticateToken,upload.single('image'), async (req: Request, res: Response) => {
+    const defaultImage = fs.readFileSync("./src/assets/defaultImage.jpeg");
+    
+try {
+            
+    const { name, description, value}: product = req.body;
+ 
+    let imageData: Buffer = Buffer.from(defaultImage);
+
+    if(req.file){
+        imageData = req.file.buffer;
+    }
+
+    await prismaConnection.tb_produto.create({
+        data: {
+            nome: name,
+            descricao: description,
+            valor: value,
+            imagem: imageData
+        }
+    });
+
+    res.status(201).json({ message: "Product created successfully"});
+
+} catch (error) {
+    res.status(500).json({ error: "Item creation failed"});
+}
+});
+
+app.get('/products', authenticateToken, async (req: Request, res: Response) =>{
+try {
+    const page = parseInt(req.params.page as string) || 1;
+    const itemsPerPage = 10;
+    
+    const products = await prismaConnection.tb_produto.findMany({
+        skip: (page -1) * itemsPerPage,
+        take:  itemsPerPage
+    });
+
+
+
+    res.status(200).json({ products });
+} catch (error) {
+    res.status(500).json({ message: "Erro ao buscar produtos" });
+}
+});
+
+app.post('/estoque', authenticateToken, async (req: Request, res: Response) =>{
+const {id, adition}:{id:number, adition:number}  = req.body;
+
+try {
+    let oldstock = await prismaConnection.tb_estoque.findUnique({where: {id_produto:id}, select: { total: true }});
+
+    if(!oldstock){
+        if(adition < 0) return res.status(500).json({ message: "O estoque total não pode ser negativo"});
+        oldstock =  await prismaConnection.tb_estoque.create({data: {id_produto:id, total: adition}});
+        return res.status(201).json({ message: "Estoque atualizado com sucesso"});
+    }
+
+    let newTotal = oldstock.total + adition;
+
+    if(newTotal < 0){
+        return res.status(500).json({ message: "O estoque total não pode ser negativo"});
+    }
+
+    prismaConnection.tb_estoque.update({
+        where:{ id_produto:id },
+        data: {total:  oldstock.total + adition}
+    });
+
+    res.status(200).json({ message: "Estoque atualizado com sucesso"});
+    
+} catch (error) {
+    res.status(500).json({ message: "Atualização de estoque falhou" });
+}
+});
+
 app.listen(8080, () => console.log('Server listening on port 8080'));
