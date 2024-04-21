@@ -44,6 +44,22 @@ type product = {
     image?: Buffer;
 }
 
+type attProduct = {
+    id?:number;
+    name:string;
+    description:string;
+    value:string;
+    image?: Buffer;
+}
+
+type buildProduct = {
+    id?:number;
+    nome:string;
+    descricao:string;
+    valor:number;
+    imagem?: Buffer;
+}
+
 type stock = {
     id: number;
     total: number;
@@ -134,6 +150,61 @@ try {
     res.status(500).json({ error: "Item creation failed"});
 }
 });
+
+app.put('/attProduct', authenticateToken, upload.single('image'), async (req: Request, res: Response) => {
+
+    
+try {
+            
+    const { name, description, value, id}: attProduct = await req.body;
+ 
+    let data: buildProduct = { nome: name, descricao: description, valor: parseFloat(value)}
+
+    if(req.file){
+        data.imagem = fs.readFileSync(req.file.path);
+    }
+
+    await prismaConnection.tb_produto.update({where: {id},
+        data
+    });
+
+    res.status(200).json({ message: "Produto atualizado com sucesso"});
+
+} catch (error) {
+
+    res.status(500).json({ error: "A atualização do produto falhou"});
+}
+});
+
+app.get('/product/:id', authenticateToken,  async (req: Request, res: Response) => {
+
+    
+    try {
+                
+        const  idString  = await req.params.id;
+    
+        let id: number | null = null;
+
+        if(idString){
+            id = parseInt(idString);
+        }
+    
+        console.log(id);
+
+        if(id != null){
+            const product = await prismaConnection.tb_produto.findUnique({where: {id}});
+            res.status(200).json({ product });
+        }
+        else {
+            throw new Error();
+        }
+        
+    
+    } catch (error) {
+    
+        res.status(500).json({ error: "A solicitação falhou"});
+    }
+    });
 
 app.get('/products', authenticateToken, async (req: Request, res: Response) =>{
 try {
