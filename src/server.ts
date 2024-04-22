@@ -8,7 +8,7 @@ import fs from 'fs';
 import cors from 'cors';
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '10MB'}));
 const upload = multer({ dest: 'uploads/'});
 
 const allowedOrigins =['http://localhost:3000'];
@@ -232,8 +232,8 @@ app.get('/product/:id',   async (req: Request, res: Response) => {
             }
 
             if(id != null){
-                await prismaConnection.tb_estoque.delete({where: {id_produto: id}});
-                await prismaConnection.tb_produto.delete({where: {id}});
+                await prismaConnection.tb_estoque.deleteMany({where: {id_produto: id}});
+                await prismaConnection.tb_produto.deleteMany({where: {id}});
                 
                 res.status(200);
             }
@@ -243,6 +243,7 @@ app.get('/product/:id',   async (req: Request, res: Response) => {
             
         
         } catch (error) {
+            console.log(error);
             res.status(500).json({ error: "A deleção do produto falhou"});
         }
         });
