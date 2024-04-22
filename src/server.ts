@@ -121,7 +121,7 @@ app.post('/login', async (req: Request, res: Response) => {
     }
 });
 
-app.post('/product', authenticateToken, upload.single('image'), async (req: Request, res: Response) => {
+app.post('/product', upload.single('image'), async (req: Request, res: Response) => {
     const defaultImage = fs.readFileSync("./src/assets/defaultImage.jpeg");
     
 try {
@@ -151,7 +151,7 @@ try {
 }
 });
 
-app.put('/attProduct', authenticateToken, upload.single('image'), async (req: Request, res: Response) => {
+app.put('/attProduct', upload.single('image'), async (req: Request, res: Response) => {
 
     
 try {
@@ -190,7 +190,7 @@ try {
 }
 });
 
-app.get('/product/:id', authenticateToken,  async (req: Request, res: Response) => {
+app.get('/product/:id',   async (req: Request, res: Response) => {
 
     
     try {
@@ -218,17 +218,39 @@ app.get('/product/:id', authenticateToken,  async (req: Request, res: Response) 
     }
     });
 
-app.get('/products', authenticateToken, async (req: Request, res: Response) =>{
-try {
-    const page = parseInt(req.params.page as string) || 1;
-    const itemsPerPage = 10;
+    app.delete('/product/:id',   async (req: Request, res: Response) => {
+
     
-    const products = await prismaConnection.tb_produto.findMany({
-        skip: (page -1) * itemsPerPage,
-        take:  itemsPerPage
-    });
+        try {
+                    
+            const  idString  = await req.params.id;
+        
+            let id: number | null = null;
+    
+            if(idString){
+                id = parseInt(idString);
+            }
 
+            if(id != null){
+                await prismaConnection.tb_estoque.delete({where: {id_produto: id}});
+                await prismaConnection.tb_produto.delete({where: {id}});
+                
+                res.status(200);
+            }
+            else {
+                throw new Error();
+            }
+            
+        
+        } catch (error) {
+            res.status(500).json({ error: "A deleção do produto falhou"});
+        }
+        });
 
+app.get('/products',  async (req: Request, res: Response) =>{
+try {
+ 
+    const products = await prismaConnection.tb_produto.findMany();
 
     res.status(200).json({ products });
 } catch (error) {
@@ -236,7 +258,18 @@ try {
 }
 });
 
-app.post('/estoque', authenticateToken, async (req: Request, res: Response) =>{
+app.get('/productsEstoque',  async (req: Request, res: Response) =>{
+    try {
+     
+        const estoque = await prismaConnection.$queryRaw`SELECT prod.id, prod.nome, prod.descricao, prod.valor, prod.imagem, est.total FROM tb_produto AS prod LEFT JOIN tb_estoque as est ON prod.id = est.id_produto;`;
+    
+        res.status(200).json({ estoque });
+    } catch (error) {
+        res.status(500).json({ message: "Erro ao buscar produtos" });
+    }
+});
+
+app.post('/estoque',  async (req: Request, res: Response) =>{
 const {idString, additionString}:{idString:string, additionString:string}  = req.body;
 
 const id = parseInt(idString, 10);
