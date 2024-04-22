@@ -237,7 +237,12 @@ try {
 });
 
 app.post('/estoque', authenticateToken, async (req: Request, res: Response) =>{
-const {id, adition}:{id:number, adition:number}  = req.body;
+const {idString, additionString}:{idString:string, additionString:string}  = req.body;
+
+const id = parseInt(idString, 10);
+const adition = parseFloat(additionString);
+
+console.log({id, adition})
 
 try {
     let oldstock = await prismaConnection.tb_estoque.findUnique({where: {id_produto:id}, select: { total: true }});
@@ -250,13 +255,15 @@ try {
 
     let newTotal = oldstock.total + adition;
 
+    console.log(newTotal);
+
     if(newTotal < 0){
         return res.status(500).json({ message: "O estoque total não pode ser negativo"});
     }
 
-    prismaConnection.tb_estoque.update({
+    await prismaConnection.tb_estoque.update({
         where:{ id_produto:id },
-        data: {total:  oldstock.total + adition}
+        data: {total:  newTotal}
     });
 
     res.status(200).json({ message: "Estoque atualizado com sucesso"});
