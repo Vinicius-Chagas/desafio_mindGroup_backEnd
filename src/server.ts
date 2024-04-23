@@ -121,7 +121,7 @@ app.post('/login', async (req: Request, res: Response) => {
     }
 });
 
-app.post('/product', upload.single('image'), async (req: Request, res: Response) => {
+app.post('/product',authenticateToken , upload.single('image'), async (req: Request, res: Response) => {
     const defaultImage = fs.readFileSync("./src/assets/defaultImage.jpeg");
     
 try {
@@ -151,7 +151,7 @@ try {
 }
 });
 
-app.put('/attProduct', upload.single('image'), async (req: Request, res: Response) => {
+app.put('/attProduct',authenticateToken , upload.single('image'), async (req: Request, res: Response) => {
 
     
 try {
@@ -169,8 +169,6 @@ try {
         if(id){
             idNumber = parseInt(id);
         }
-
-        console.log
 
         if(idNumber != null){
             await prismaConnection.tb_produto.update({where: {id:idNumber},
@@ -190,7 +188,7 @@ try {
 }
 });
 
-app.get('/product/:id',   async (req: Request, res: Response) => {
+app.get('/product/:id',authenticateToken ,   async (req: Request, res: Response) => {
 
     
     try {
@@ -218,7 +216,7 @@ app.get('/product/:id',   async (req: Request, res: Response) => {
     }
     });
 
-    app.delete('/product/:id',   async (req: Request, res: Response) => {
+    app.delete('/product/:id',authenticateToken ,   async (req: Request, res: Response) => {
 
     
         try {
@@ -248,7 +246,7 @@ app.get('/product/:id',   async (req: Request, res: Response) => {
         }
         });
 
-app.get('/products',  async (req: Request, res: Response) =>{
+app.get('/products',authenticateToken ,  async (req: Request, res: Response) =>{
 try {
  
     const products = await prismaConnection.tb_produto.findMany();
@@ -259,7 +257,7 @@ try {
 }
 });
 
-app.get('/productsEstoque',  async (req: Request, res: Response) =>{
+app.get('/productsEstoque',authenticateToken ,  async (req: Request, res: Response) =>{
     try {
      
         const estoque = await prismaConnection.$queryRaw`SELECT prod.id, prod.nome, prod.descricao, prod.valor, prod.imagem, est.total FROM tb_produto AS prod LEFT JOIN tb_estoque as est ON prod.id = est.id_produto;`;
@@ -270,13 +268,12 @@ app.get('/productsEstoque',  async (req: Request, res: Response) =>{
     }
 });
 
-app.post('/estoque',  async (req: Request, res: Response) =>{
+app.post('/estoque',authenticateToken ,  async (req: Request, res: Response) =>{
 const {idString, additionString}:{idString:string, additionString:string}  = req.body;
 
 const id = parseInt(idString, 10);
 const adition = parseFloat(additionString);
 
-console.log({id, adition})
 
 try {
     let oldstock = await prismaConnection.tb_estoque.findUnique({where: {id_produto:id}, select: { total: true }});
@@ -289,7 +286,6 @@ try {
 
     let newTotal = oldstock.total + adition;
 
-    console.log(newTotal);
 
     if(newTotal < 0){
         return res.status(500).json({ message: "O estoque total não pode ser negativo"});
