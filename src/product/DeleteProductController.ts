@@ -3,22 +3,15 @@ import prismaConnection from "../libs/mysql";
 
 export default async function deleteProduct(req: Request, res: Response){
 
-    
     try {
                 
-        const  idString  = await req.params.id;
-    
-        let id: number | null = null;
-
-        if(idString){
-            id = parseInt(idString);
-        }
+        const  id  = +req.params.id;
 
         if(id != null){
             await prismaConnection.tb_estoque.deleteMany({where: {id_produto: id}});
-            await prismaConnection.tb_produto.deleteMany({where: {id}});
+            await prismaConnection.tb_produto.delete({where: {id}});
             
-            res.status(200);
+            res.status(200).json({ success:true });
         }
         else {
             throw new Error();
@@ -26,7 +19,6 @@ export default async function deleteProduct(req: Request, res: Response){
         
     
     } catch (error) {
-        console.log(error);
         res.status(500).json({ error: "A deleção do produto falhou"});
     }
 }
